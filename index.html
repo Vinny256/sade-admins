@@ -300,18 +300,33 @@
         renderTopCustomers(data.transactions || []);
     }
 
-    function updateMpesaLogs(txs) {
-        const list = document.getElementById('mpesa-list');
-        list.innerHTML = txs.map(t => `
+function updateMpesaLogs(txs) {
+    const list = document.getElementById('mpesa-list');
+    
+    // Safety check: if txs is null or not an array, stop the crash
+    if (!txs || !Array.isArray(txs)) {
+        console.error("❌ [Table Error] No transactions array found");
+        return;
+    }
+
+    list.innerHTML = txs.map(t => {
+        // Handle the name correctly even if it's already the string "Customer"
+        let name = t.mpesaName;
+        if (!name || name === "" || name === "null" || name === "undefined") {
+            name = "Customer";
+        }
+
+        return `
             <tr>
                 <td>${new Date(t.createdAt).toLocaleTimeString()}</td>
-                <td>${t.mpesaName || 'Customer'}</td>
-                <td>${t.phoneNumber}</td>
-                <td>${t.amount}/=</td>
-                <td>${t.mpesaReceipt || 'N/A'}</td>
+                <td style="font-weight:bold; color:var(--orange)">${name}</td>
+                <td>${t.phoneNumber || 'N/A'}</td>
+                <td>${t.amount || 0}/=</td>
+                <td>${t.mpesaReceipt || 'Pending'}</td>
             </tr>
-        `).join('');
-    }
+        `;
+    }).join('');
+}
 
     function updateAgentData(txs) {
         const agents = {};
