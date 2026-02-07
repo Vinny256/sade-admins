@@ -12,6 +12,60 @@
         
         body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); margin: 0; display: flex; flex-direction: row; height: 100vh; overflow: hidden; }
 
+        /* --- LOADING ANIMATION (Sade Net Power-Up) --- */
+        #server-loader {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(13, 13, 13, 0.98);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+            transition: opacity 0.5s ease;
+        }
+
+        .loader-bar-container {
+            width: 250px;
+            height: 6px;
+            background: #222;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-top: 20px;
+            border: 1px solid #333;
+        }
+
+        .loader-progress {
+            width: 40%;
+            height: 100%;
+            background: var(--orange);
+            border-radius: 10px;
+            animation: moveBar 2s infinite ease-in-out, changeColor 4s infinite;
+        }
+
+        @keyframes moveBar {
+            0% { transform: translateX(-100%); }
+            50% { transform: translateX(150%); }
+            100% { transform: translateX(-100%); }
+        }
+
+        @keyframes changeColor {
+            0% { background: #FF6600; box-shadow: 0 0 10px #FF6600; }
+            50% { background: #FF9900; box-shadow: 0 0 20px #FF9900; }
+            100% { background: #FF6600; box-shadow: 0 0 10px #FF6600; }
+        }
+
+        .loader-text {
+            font-size: 0.9rem;
+            color: var(--orange);
+            font-weight: bold;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
         /* --- NAVIGATION --- */
         nav { width: 250px; background: var(--card); border-right: 1px solid #333; display: flex; flex-direction: column; padding: 20px; transition: 0.3s; }
         nav .logo { color: var(--orange); font-size: 1.5rem; font-weight: 800; margin-bottom: 40px; display: flex; align-items: center; gap: 10px; }
@@ -56,7 +110,7 @@
 
         /* --- PRINTING --- */
         @media print {
-            nav, .card, .btn-action, h1, .analytics-row { display: none !important; }
+            nav, .card, .btn-action, h1, .analytics-row, #server-loader { display: none !important; }
             main { padding: 0; }
             .v-grid { display: grid !important; grid-template-columns: repeat(3, 1fr) !important; gap: 10mm; }
             .v-card { page-break-inside: avoid; border: 1px solid black; box-shadow: none; }
@@ -69,6 +123,14 @@
     </style>
 </head>
 <body>
+
+<div id="server-loader">
+    <div class="loader-text">Waking up Sade Server...</div>
+    <div class="loader-bar-container">
+        <div class="loader-progress"></div>
+    </div>
+    <p style="font-size: 0.7rem; color: #666; margin-top: 10px;">Render is spinning up (takes ~50s)</p>
+</div>
 
 <div id="toast-container"></div>
 
@@ -238,14 +300,36 @@
     }
 
     async function loadAllData() {
+        // Show loader before fetching
+        document.getElementById('server-loader').style.display = 'flex';
+        document.getElementById('server-loader').style.opacity = '1';
+
         try {
+            console.log("📡 [Sync] Fetching latest Sade Net data...");
             const res = await axios.get(`${ADMIN_API}/api/payments/report`);
-            if(res.data.success) {
+            
+            if(res.data && res.data.success) {
                 updateDashboard(res.data);
-                updateMpesaLogs(res.data.transactions);
-                updateAgentData(res.data.transactions);
+                
+                if (res.data.transactions && Array.isArray(res.data.transactions)) {
+                    updateMpesaLogs(res.data.transactions);
+                    updateAgentData(res.data.transactions);
+                }
+
+                // Hide loader once data arrives
+                setTimeout(() => {
+                    const loader = document.getElementById('server-loader');
+                    loader.style.opacity = '0';
+                    setTimeout(() => loader.style.display = 'none', 500);
+                    showToast("Server Awake & Data Synced", "green");
+                }, 800);
             }
-        } catch (err) { console.error("Data fetch failed"); }
+        } catch (err) { 
+            console.error("Data fetch failed", err); 
+            document.querySelector('.loader-text').innerText = "Connection Failed";
+            document.querySelector('.loader-progress').style.background = "var(--red)";
+            showToast("Server is taking too long to wake up...", "red");
+        }
     }
 
     function updateDashboard(data) {
@@ -267,6 +351,7 @@
 
     function updateMpesaLogs(txs) {
         const list = document.getElementById('mpesa-list');
+        // FALLBACK: If mpesaName is missing, call them "Customer"
         list.innerHTML = txs.map(t => `
             <tr>
                 <td>${new Date(t.createdAt).toLocaleTimeString()}</td>
@@ -313,12 +398,10 @@
             return showToast("Please fill all fields", "red");
         }
 
-        // Even number check
         if(amount % 2 !== 0) {
             return showToast("Amount must be an even number for a clean split", "red");
         }
 
-        // Mock verification
         if(secret.length < 4) {
             return showToast("Invalid Secret Key", "red");
         }
@@ -354,6 +437,7 @@
 
     // CHARTS & CUSTOMERS (Existing Logic)
     function initChart(transactions) {
+        if(!transactions || transactions.length === 0) return;
         const todayStr = new Date().toLocaleDateString();
         const yestStr = new Date(Date.now() - 864e5).toLocaleDateString();
         const todayT = transactions.filter(t => new Date(t.createdAt).toLocaleDateString() === todayStr).reduce((a,b)=>a+b.amount, 0);
@@ -368,8 +452,9 @@
     }
 
     function renderTopCustomers(transactions) {
+        if(!transactions) return;
         const group = transactions.reduce((acc, curr) => {
-            const n = curr.mpesaName || "Guest";
+            const n = curr.mpesaName || "Customer";
             acc[n] = (acc[n] || 0) + curr.amount;
             return acc;
         }, {});
