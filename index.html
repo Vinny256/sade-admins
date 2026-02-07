@@ -19,8 +19,8 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(13, 13, 13, 0.8); /* Transparent background */
-            backdrop-filter: blur(5px); 
+            background: rgba(13, 13, 13, 0.7); /* Transparent background */
+            backdrop-filter: blur(4px); /* Slight blur for modern look */
             display: flex;
             flex-direction: column;
             justify-content: center;
@@ -89,7 +89,6 @@
         .section { display: none; }
         .section.active { display: block; animation: fadeIn 0.5s ease; }
 
-        /* --- DASHBOARD CARDS --- */
         .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; margin-bottom: 30px; }
         .card { background: var(--card); padding: 20px; border-radius: 12px; border-bottom: 3px solid #333; transition: 0.3s; margin-bottom: 20px; }
         .card:hover { border-color: var(--orange); transform: translateY(-5px); }
@@ -97,7 +96,6 @@
         .card .value { font-size: 1.8rem; font-weight: bold; margin: 10px 0; color: #fff; }
         .card .sub { font-size: 0.85rem; }
 
-        /* --- TABLES & LISTS --- */
         table { width: 100%; border-collapse: collapse; margin-top: 15px; }
         th { text-align: left; color: var(--orange); padding: 12px; border-bottom: 1px solid #333; }
         td { padding: 12px; border-bottom: 1px solid #222; font-size: 0.9rem; }
@@ -171,6 +169,16 @@
                 <h3>Agent Commissions</h3>
                 <div class="value" style="color:var(--red)" id="commissions">0/=</div>
                 <div class="sub">Total 10% withheld by shops</div>
+            </div>
+            <div class="card">
+                <h3>Total Vouchers Sold</h3>
+                <div class="value" id="vouchers-sold">0</div>
+                <div class="sub">Activated codes</div>
+            </div>
+            <div class="card">
+                <h3>Vouchers on Shops</h3>
+                <div class="value" id="vouchers-active">0</div>
+                <div class="sub">Unused vouchers at agents</div>
             </div>
         </div>
         <div class="analytics-row">
@@ -273,7 +281,7 @@
                 updateMpesaLogs(res.data.transactions);
                 updateAgentData(res.data.transactions);
 
-                // If data comes back early, let them in immediately
+                // Early exit for loader on success
                 clearInterval(countdown);
                 closeLoader();
                 showToast("Connected", "green");
@@ -295,38 +303,34 @@
         document.getElementById('emergency-fund').innerText = `${emergency}/=`;
         document.getElementById('founder-pay').innerText = `${salary}/=`;
         document.getElementById('vouchers-sold').innerText = data.count || 0;
+        // Placeholder for active vouchers logic if needed later
+        document.getElementById('vouchers-active').innerText = "0";
 
         initChart(data.transactions || []);
         renderTopCustomers(data.transactions || []);
     }
 
-function updateMpesaLogs(txs) {
-    const list = document.getElementById('mpesa-list');
-    
-    // Safety check: if txs is null or not an array, stop the crash
-    if (!txs || !Array.isArray(txs)) {
-        console.error("❌ [Table Error] No transactions array found");
-        return;
+    function updateMpesaLogs(txs) {
+        const list = document.getElementById('mpesa-list');
+        if (!txs || !Array.isArray(txs)) return;
+
+        list.innerHTML = txs.map(t => {
+            let name = t.mpesaName;
+            if (!name || name === "" || name === "null" || name === "undefined") {
+                name = "Customer";
+            }
+
+            return `
+                <tr>
+                    <td>${new Date(t.createdAt).toLocaleTimeString()}</td>
+                    <td style="font-weight:bold; color:var(--orange)">${name}</td>
+                    <td>${t.phoneNumber || 'N/A'}</td>
+                    <td>${t.amount || 0}/=</td>
+                    <td>${t.mpesaReceipt || 'Pending'}</td>
+                </tr>
+            `;
+        }).join('');
     }
-
-    list.innerHTML = txs.map(t => {
-        // Handle the name correctly even if it's already the string "Customer"
-        let name = t.mpesaName;
-        if (!name || name === "" || name === "null" || name === "undefined") {
-            name = "Customer";
-        }
-
-        return `
-            <tr>
-                <td>${new Date(t.createdAt).toLocaleTimeString()}</td>
-                <td style="font-weight:bold; color:var(--orange)">${name}</td>
-                <td>${t.phoneNumber || 'N/A'}</td>
-                <td>${t.amount || 0}/=</td>
-                <td>${t.mpesaReceipt || 'Pending'}</td>
-            </tr>
-        `;
-    }).join('');
-}
 
     function updateAgentData(txs) {
         const agents = {};
