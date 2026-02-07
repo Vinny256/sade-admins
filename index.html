@@ -19,8 +19,8 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(13, 13, 13, 0.7); /* Transparent background */
-            backdrop-filter: blur(4px); /* Slight blur for modern look */
+            background: rgba(13, 13, 13, 0.7); 
+            backdrop-filter: blur(4px); 
             display: flex;
             flex-direction: column;
             justify-content: center;
@@ -100,9 +100,33 @@
         th { text-align: left; color: var(--orange); padding: 12px; border-bottom: 1px solid #333; }
         td { padding: 12px; border-bottom: 1px solid #222; font-size: 0.9rem; }
         
-        .v-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px; }
-        .v-card { background: white; color: black; padding: 15px; border-radius: 8px; text-align: center; border: 2px solid #000; position: relative; }
-        .v-card .code { font-size: 1.4rem; font-weight: 800; color: var(--orange); letter-spacing: 2px; }
+        /* --- STYLED VOUCHERS --- */
+        .v-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 0; border: 1px dashed #444; }
+        
+        .v-card { 
+            background: var(--orange) !important; 
+            color: white; 
+            padding: 12px; 
+            text-align: center; 
+            position: relative;
+            border: 1px dashed rgba(255, 255, 255, 0.4); 
+            box-sizing: border-box;
+            -webkit-print-color-adjust: exact;
+        }
+
+        .v-card .code-box { 
+            background: white !important; 
+            color: black !important; 
+            border-radius: 4px; 
+            padding: 8px; 
+            margin: 10px auto; 
+            width: 90%; 
+            font-family: 'Courier New', monospace; 
+            font-size: 1.2rem; 
+            font-weight: 900;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+            letter-spacing: 1px;
+        }
 
         .form-input { background: #222; border: 1px solid #444; color: white; padding: 10px; border-radius: 6px; width: 100%; margin-top: 5px; }
         .btn-action { background: var(--orange); color: white; border: none; padding: 12px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; margin-top: 10px; }
@@ -110,10 +134,20 @@
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
         @media print {
-            nav, .card, .btn-action, h1, .analytics-row, #server-loader { display: none !important; }
-            main { padding: 0; }
-            .v-grid { display: grid !important; grid-template-columns: repeat(3, 1fr) !important; gap: 10mm; }
-            .v-card { page-break-inside: avoid; border: 1px solid black; box-shadow: none; }
+            nav, .card, .btn-action, h1, .analytics-row, #server-loader, #toast-container { display: none !important; }
+            main { padding: 0; margin: 0; }
+            .v-grid { 
+                display: grid !important; 
+                grid-template-columns: repeat(3, 1fr) !important; 
+                gap: 0 !important; 
+                border: 1px dashed #000 !important; 
+            }
+            .v-card { 
+                border: 1px dashed #000 !important; 
+                page-break-inside: avoid;
+                height: 55mm; /* Standard rows */
+                background-color: #FF6600 !important;
+            }
         }
 
         #toast-container { position: fixed; top: 20px; right: 20px; z-index: 9999; }
@@ -176,9 +210,9 @@
                 <div class="sub">Activated codes</div>
             </div>
             <div class="card">
-                <h3>Vouchers on Shops</h3>
-                <div class="value" id="vouchers-active">0</div>
-                <div class="sub">Unused vouchers at agents</div>
+                <h3>Vouchers Remaining</h3>
+                <div class="value" id="vouchers-active" style="color: var(--orange);">0</div>
+                <div class="sub">Unused in database</div>
             </div>
         </div>
         <div class="analytics-row">
@@ -215,8 +249,8 @@
     </div>
 
     <div id="agents" class="section">
-        <h1>Agent Commissions</h1>
-        <div class="card"><p>Track how much cash is held by shop agents (10%).</p><table><thead><tr><th>Agent Name</th><th>Vouchers Assigned</th><th>Total Sales</th><th>Commission (10%)</th><th>Debt to Hub</th></tr></thead><tbody id="agent-list"></tbody></table></div>
+        <h1>Agent Management</h1>
+        <div class="card"><p>Track cash held by shop agents (10%).</p><table><thead><tr><th>Agent Name</th><th>Sales</th><th>Debt to Hub</th></tr></thead><tbody id="agent-list"></tbody></table></div>
     </div>
 
     <div id="withdraw" class="section">
@@ -281,7 +315,6 @@
                 updateMpesaLogs(res.data.transactions);
                 updateAgentData(res.data.transactions);
 
-                // Early exit for loader on success
                 clearInterval(countdown);
                 closeLoader();
                 showToast("Connected", "green");
@@ -302,9 +335,13 @@
         document.getElementById('commissions').innerText = `${comms}/=`;
         document.getElementById('emergency-fund').innerText = `${emergency}/=`;
         document.getElementById('founder-pay').innerText = `${salary}/=`;
-        document.getElementById('vouchers-sold').innerText = data.count || 0;
-        // Placeholder for active vouchers logic if needed later
-        document.getElementById('vouchers-active').innerText = "0";
+        
+        // Dynamic Voucher Stats
+        const usedCount = (data.vouchers || []).filter(v => v.used).length;
+        const remainingCount = (data.vouchers || []).filter(v => !v.used).length;
+        
+        document.getElementById('vouchers-sold').innerText = usedCount;
+        document.getElementById('vouchers-active').innerText = remainingCount;
 
         initChart(data.transactions || []);
         renderTopCustomers(data.transactions || []);
@@ -319,7 +356,6 @@
             if (!name || name === "" || name === "null" || name === "undefined") {
                 name = "Customer";
             }
-
             return `
                 <tr>
                     <td>${new Date(t.createdAt).toLocaleTimeString()}</td>
@@ -336,12 +372,11 @@
         const agents = {};
         txs.forEach(t => {
             const name = t.agentName || "Direct / Main Hub";
-            if(!agents[name]) agents[name] = { count: 0, total: 0 };
-            agents[name].count++;
+            if(!agents[name]) agents[name] = { total: 0 };
             agents[name].total += t.amount;
         });
         document.getElementById('agent-list').innerHTML = Object.entries(agents).map(([name, stat]) => `
-            <tr><td>${name}</td><td>${stat.count}</td><td>${stat.total}/=</td><td>${stat.total * 0.1}/=</td><td style="color:var(--green); font-weight:bold">${stat.total * 0.9}/=</td></tr>
+            <tr><td>${name}</td><td>${stat.total}/=</td><td style="color:var(--green); font-weight:bold">${stat.total * 0.9}/=</td></tr>
         `).join('');
     }
 
@@ -368,11 +403,42 @@
             const res = await axios.post(`${ADMIN_API}/api/vouchers/generate`, { count, plan, amount: price, agentName: agent, secret });
             if(res.data.success) {
                 showToast(`Generated ${count} vouchers`, "green");
-                document.getElementById('voucher-output').innerHTML = res.data.vouchers.map(v => `
-                    <div class="v-card"><div style="font-size:0.8rem">SADE NET WIFI</div><div style="font-weight:bold; margin:5px 0">${v.plan.toUpperCase()}</div><div class="code">${v.code}</div><div style="font-size:0.6rem">Login: Connect & Enter Code<br>Support: 0768666068</div></div>
-                `).join('');
+                renderVouchers(res.data.vouchers);
             }
         } catch(e) { showToast("Check Secret Key", "red"); }
+    }
+
+    function renderVouchers(vouchers) {
+        const output = document.getElementById('voucher-output');
+        output.innerHTML = vouchers.map(v => {
+            // Groups code digits: 1234 5678 90
+            const spacedCode = v.code.toString().match(/.{1,4}/g).join(' ');
+            const serial = v.serialNumber || "SADE-00000";
+
+            return `
+                <div class="v-card">
+                    <div style="font-weight: 900; font-size: 0.9rem;">
+                        <i class="fas fa-wifi"></i> SADE NET
+                    </div>
+                    <div style="font-size: 0.55rem; text-transform: uppercase; letter-spacing: 1.5px; opacity: 0.9;">
+                        ${v.plan.replace(/_/g, ' ')}
+                    </div>
+                    
+                    <div class="code-box">
+                        ${spacedCode}
+                    </div>
+                    
+                    <div style="font-size: 0.6rem; line-height: 1.2; margin-bottom: 5px;">
+                        1. Connect to <b>SADE_NET_WIFI</b><br>
+                        2. Enter code on login page
+                    </div>
+
+                    <div style="font-size: 0.55rem; font-weight: 800; padding-top: 5px; border-top: 1px dashed rgba(255,255,255,0.4); color: #fff;">
+                        ${serial} | 0768666068
+                    </div>
+                </div>
+            `;
+        }).join('');
     }
 
     function initChart(transactions) {
