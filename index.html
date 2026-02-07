@@ -12,58 +12,56 @@
         
         body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); margin: 0; display: flex; flex-direction: row; height: 100vh; overflow: hidden; }
 
-        /* --- LOADING ANIMATION (Sade Net Power-Up) --- */
+        /* --- NEW TRANSPARENT 5-BAR LOADER --- */
         #server-loader {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(13, 13, 13, 0.98);
+            background: rgba(13, 13, 13, 0.7); /* Transparent background */
+            backdrop-filter: blur(4px); /* Slight blur for modern look */
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
             z-index: 10000;
-            transition: opacity 0.5s ease;
+            transition: opacity 0.4s ease;
         }
 
-        .loader-bar-container {
-            width: 250px;
-            height: 6px;
-            background: #222;
-            border-radius: 10px;
-            overflow: hidden;
-            margin-top: 20px;
-            border: 1px solid #333;
+        .bar-container {
+            display: flex;
+            align-items: flex-end;
+            gap: 5px;
+            height: 40px;
+            margin-bottom: 15px;
         }
 
-        .loader-progress {
-            width: 40%;
-            height: 100%;
+        .bar {
+            width: 8px;
+            height: 10px;
             background: var(--orange);
-            border-radius: 10px;
-            animation: moveBar 2s infinite ease-in-out, changeColor 4s infinite;
+            border-radius: 2px;
+            animation: bounce 1s ease-in-out infinite;
         }
 
-        @keyframes moveBar {
-            0% { transform: translateX(-100%); }
-            50% { transform: translateX(150%); }
-            100% { transform: translateX(-100%); }
+        .bar:nth-child(1) { animation-delay: 0.1s; }
+        .bar:nth-child(2) { animation-delay: 0.2s; }
+        .bar:nth-child(3) { animation-delay: 0.3s; }
+        .bar:nth-child(4) { animation-delay: 0.4s; }
+        .bar:nth-child(5) { animation-delay: 0.5s; }
+
+        @keyframes bounce {
+            0%, 100% { height: 10px; opacity: 0.7; }
+            50% { height: 40px; opacity: 1; box-shadow: 0 0 10px var(--orange); }
         }
 
-        @keyframes changeColor {
-            0% { background: #FF6600; box-shadow: 0 0 10px #FF6600; }
-            50% { background: #FF9900; box-shadow: 0 0 20px #FF9900; }
-            100% { background: #FF6600; box-shadow: 0 0 10px #FF6600; }
-        }
-
-        .loader-text {
-            font-size: 0.9rem;
+        .loader-status {
+            font-size: 0.8rem;
             color: var(--orange);
             font-weight: bold;
-            letter-spacing: 2px;
-            text-transform: uppercase;
+            letter-spacing: 1px;
+            text-shadow: 0 0 10px rgba(0,0,0,0.5);
         }
 
         /* --- NAVIGATION --- */
@@ -72,7 +70,6 @@
         nav a { color: var(--text); text-decoration: none; padding: 15px; border-radius: 8px; margin-bottom: 10px; transition: 0.3s; display: flex; align-items: center; gap: 10px; cursor: pointer; }
         nav a:hover, nav a.active { background: var(--orange); color: white; }
 
-        /* Mobile Adjustments */
         @media (max-width: 768px) {
             body { flex-direction: column; }
             nav { width: 100%; height: auto; flex-direction: row; overflow-x: auto; padding: 10px; border-right: none; border-bottom: 1px solid #333; position: sticky; top: 0; z-index: 100; }
@@ -98,7 +95,6 @@
         th { text-align: left; color: var(--orange); padding: 12px; border-bottom: 1px solid #333; }
         td { padding: 12px; border-bottom: 1px solid #222; font-size: 0.9rem; }
         
-        /* --- VOUCHER FACTORY --- */
         .v-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px; }
         .v-card { background: white; color: black; padding: 15px; border-radius: 8px; text-align: center; border: 2px solid #000; position: relative; }
         .v-card .code { font-size: 1.4rem; font-weight: 800; color: var(--orange); letter-spacing: 2px; }
@@ -108,7 +104,6 @@
 
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-        /* --- PRINTING --- */
         @media print {
             nav, .card, .btn-action, h1, .analytics-row, #server-loader { display: none !important; }
             main { padding: 0; }
@@ -116,7 +111,6 @@
             .v-card { page-break-inside: avoid; border: 1px solid black; box-shadow: none; }
         }
 
-        /* --- NEW TOAST STYLE --- */
         #toast-container { position: fixed; top: 20px; right: 20px; z-index: 9999; }
         .toast { background: var(--card); border-left: 5px solid var(--orange); color: white; padding: 15px 25px; margin-bottom: 10px; border-radius: 8px; box-shadow: 0 5px 15px rgba(0,0,0,0.5); animation: slideIn 0.3s ease-out; }
         @keyframes slideIn { from { transform: translateX(100%); } to { transform: translateX(0); } }
@@ -125,11 +119,14 @@
 <body>
 
 <div id="server-loader">
-    <div class="loader-text">Waking up Sade Server...</div>
-    <div class="loader-bar-container">
-        <div class="loader-progress"></div>
+    <div class="bar-container">
+        <div class="bar"></div>
+        <div class="bar"></div>
+        <div class="bar"></div>
+        <div class="bar"></div>
+        <div class="bar"></div>
     </div>
-    <p style="font-size: 0.7rem; color: #666; margin-top: 10px;">Render is spinning up (takes ~50s)</p>
+    <div class="loader-status" id="loader-msg">Syncing with Sade Net...</div>
 </div>
 
 <div id="toast-container"></div>
@@ -146,7 +143,6 @@
 <main>
     <div id="dashboard" class="section active">
         <h1>Financial Oversight</h1>
-        
         <div class="stats-grid">
             <div class="card">
                 <h3>Total Sales (Gross)</h3>
@@ -169,7 +165,6 @@
                 <div class="sub">Total 10% withheld by shops</div>
             </div>
         </div>
-
         <div class="analytics-row">
             <div class="chart-box">
                 <h3>Today vs Yesterday</h3>
@@ -187,26 +182,10 @@
         <h1>Voucher Factory</h1>
         <div class="card">
             <div class="stats-grid" style="grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));">
-                <div>
-                    <label>Plan</label>
-                    <select id="v-plan" class="form-input">
-                        <option value="10_sh_1hr" data-price="10">1 HR (10/=)</option>
-                        <option value="20_sh_3hr" data-price="20">3 HRS (20/=)</option>
-                        <option value="50_sh_24hr" data-price="50">24 HRS (50/=)</option>
-                    </select>
-                </div>
-                <div>
-                    <label>Qty</label>
-                    <input type="number" id="v-count" class="form-input" value="30">
-                </div>
-                <div>
-                    <label>Shop/Agent</label>
-                    <input type="text" id="v-agent" class="form-input" placeholder="Mama Mboga">
-                </div>
-                <div>
-                    <label>Admin Secret</label>
-                    <input type="password" id="v-secret" class="form-input">
-                </div>
+                <div><label>Plan</label><select id="v-plan" class="form-input"><option value="10_sh_1hr" data-price="10">1 HR (10/=)</option><option value="20_sh_3hr" data-price="20">3 HRS (20/=)</option><option value="50_sh_24hr" data-price="50">24 HRS (50/=)</option></select></div>
+                <div><label>Qty</label><input type="number" id="v-count" class="form-input" value="30"></div>
+                <div><label>Shop/Agent</label><input type="text" id="v-agent" class="form-input" placeholder="Mama Mboga"></div>
+                <div><label>Admin Secret</label><input type="password" id="v-secret" class="form-input"></div>
             </div>
             <button class="btn-action" onclick="generateBatch()">Generate & Ready Print</button>
             <button class="btn-action" style="background:#333" onclick="window.print()">🖨️ Print Batch</button>
@@ -216,63 +195,22 @@
 
     <div id="payments" class="section">
         <h1>Transaction History</h1>
-        <div class="card">
-            <table id="mpesa-table">
-                <thead>
-                    <tr>
-                        <th>Time</th>
-                        <th>Name</th>
-                        <th>Phone</th>
-                        <th>Amount</th>
-                        <th>Receipt</th>
-                    </tr>
-                </thead>
-                <tbody id="mpesa-list"></tbody>
-            </table>
-        </div>
+        <div class="card"><table id="mpesa-table"><thead><tr><th>Time</th><th>Name</th><th>Phone</th><th>Amount</th><th>Receipt</th></tr></thead><tbody id="mpesa-list"></tbody></table></div>
     </div>
 
     <div id="agents" class="section">
         <h1>Agent Commissions</h1>
-        <div class="card">
-            <p>Track how much cash is held by shop agents (10%).</p>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Agent Name</th>
-                        <th>Vouchers Assigned</th>
-                        <th>Total Sales</th>
-                        <th>Commission (10%)</th>
-                        <th>Debt to Hub</th>
-                    </tr>
-                </thead>
-                <tbody id="agent-list"></tbody>
-            </table>
-        </div>
+        <div class="card"><p>Track how much cash is held by shop agents (10%).</p><table><thead><tr><th>Agent Name</th><th>Vouchers Assigned</th><th>Total Sales</th><th>Commission (10%)</th><th>Debt to Hub</th></tr></thead><tbody id="agent-list"></tbody></table></div>
     </div>
 
     <div id="withdraw" class="section">
         <h1>Founder Withdrawal</h1>
         <div class="card" style="max-width: 500px; border-left: 5px solid var(--green);">
             <h3>Request Payout</h3>
-            <p style="font-size: 0.8rem; color: #888;">Split: 50% each from Net Earnings (After 15% deductions)</p>
-            
-            <div class="form-group" style="margin-top: 15px;">
-                <label>Amount to Withdraw (Total)</label>
-                <input type="number" id="w-amount" class="form-input" placeholder="Enter Even Number">
-                <div id="w-split-preview" style="font-size: 0.75rem; margin-top: 5px; color: var(--green);">
-                    Split: 0/= each founder
-                </div>
-            </div>
-
-            <div class="form-group" style="margin-top: 15px;">
-                <label>Admin Secret Key</label>
-                <input type="password" id="w-secret" class="form-input">
-            </div>
-
-            <button class="btn-action" style="background: var(--green); width: 100%;" onclick="handleWithdrawal()">
-                <i class="fas fa-paper-plane"></i> Request Withdrawal
-            </button>
+            <p style="font-size: 0.8rem; color: #888;">Split: 50% each from Net Earnings</p>
+            <div class="form-group" style="margin-top: 15px;"><label>Amount to Withdraw</label><input type="number" id="w-amount" class="form-input" placeholder="Enter Even Number"><div id="w-split-preview" style="font-size: 0.75rem; margin-top: 5px; color: var(--green);">Split: 0/= each founder</div></div>
+            <div class="form-group" style="margin-top: 15px;"><label>Admin Secret Key</label><input type="password" id="w-secret" class="form-input"></div>
+            <button class="btn-action" style="background: var(--green); width: 100%;" onclick="handleWithdrawal()"><i class="fas fa-paper-plane"></i> Request Withdrawal</button>
         </div>
     </div>
 </main>
@@ -280,7 +218,6 @@
 <script>
     const ADMIN_API = "https://sade-admin-backend.onrender.com"; 
 
-    // TOAST FUNCTION (Replaces Alert)
     function showToast(message, type = 'orange') {
         const container = document.getElementById('toast-container');
         const toast = document.createElement('div');
@@ -300,58 +237,56 @@
     }
 
     async function loadAllData() {
-        // Show loader before fetching
-        document.getElementById('server-loader').style.display = 'flex';
-        document.getElementById('server-loader').style.opacity = '1';
+        // Reset Loader View
+        const loader = document.getElementById('server-loader');
+        const loaderMsg = document.getElementById('loader-msg');
+        loader.style.display = 'flex';
+        loader.style.opacity = '1';
+        loaderMsg.innerText = "Syncing with Sade Net...";
+        loaderMsg.style.color = "var(--orange)";
 
         try {
-            console.log("📡 [Sync] Fetching latest Sade Net data...");
+            console.log("📡 [Sync] Fetching Sade Net data...");
             const res = await axios.get(`${ADMIN_API}/api/payments/report`);
             
             if(res.data && res.data.success) {
                 updateDashboard(res.data);
-                
-                if (res.data.transactions && Array.isArray(res.data.transactions)) {
-                    updateMpesaLogs(res.data.transactions);
-                    updateAgentData(res.data.transactions);
-                }
+                updateMpesaLogs(res.data.transactions);
+                updateAgentData(res.data.transactions);
 
-                // Hide loader once data arrives
-                setTimeout(() => {
-                    const loader = document.getElementById('server-loader');
-                    loader.style.opacity = '0';
-                    setTimeout(() => loader.style.display = 'none', 500);
-                    showToast("Server Awake & Data Synced", "green");
-                }, 800);
+                // ✅ SUCCESS: Hide loader immediately
+                loader.style.opacity = '0';
+                setTimeout(() => loader.style.display = 'none', 400);
+                showToast("Server Awake & Data Synced", "green");
             }
         } catch (err) { 
-            console.error("Data fetch failed", err); 
-            document.querySelector('.loader-text').innerText = "Connection Failed";
-            document.querySelector('.loader-progress').style.background = "var(--red)";
-            showToast("Server is taking too long to wake up...", "red");
+            console.error("Data fetch failed", err);
+            // ❌ FAILURE: Keep loader visible but show error state
+            loaderMsg.innerText = "Server Sleep / Connection Timeout";
+            loaderMsg.style.color = "var(--red)";
+            showToast("Backend is taking too long to wake up...", "red");
         }
     }
 
     function updateDashboard(data) {
-        const gross = data.totalGross;
-        const comms = data.agentCommissions;
-        const emergency = data.emergencyFund;
-        const net = data.netProfit;
+        const gross = data.totalGross || 0;
+        const comms = data.agentCommissions || 0;
+        const emergency = data.emergencyFund || 0;
+        const net = data.netProfit || 0;
         const salary = net / 2;
 
         document.getElementById('total-sales').innerText = `${gross}/=`;
         document.getElementById('commissions').innerText = `${comms}/=`;
         document.getElementById('emergency-fund').innerText = `${emergency}/=`;
         document.getElementById('founder-pay').innerText = `${salary}/=`;
-        document.getElementById('vouchers-sold').innerText = data.count;
+        document.getElementById('vouchers-sold').innerText = data.count || 0;
 
-        initChart(data.transactions);
-        renderTopCustomers(data.transactions);
+        initChart(data.transactions || []);
+        renderTopCustomers(data.transactions || []);
     }
 
     function updateMpesaLogs(txs) {
         const list = document.getElementById('mpesa-list');
-        // FALLBACK: If mpesaName is missing, call them "Customer"
         list.innerHTML = txs.map(t => `
             <tr>
                 <td>${new Date(t.createdAt).toLocaleTimeString()}</td>
@@ -371,73 +306,43 @@
             agents[name].count++;
             agents[name].total += t.amount;
         });
-
         document.getElementById('agent-list').innerHTML = Object.entries(agents).map(([name, stat]) => `
-            <tr>
-                <td>${name}</td>
-                <td>${stat.count}</td>
-                <td>${stat.total}/=</td>
-                <td>${stat.total * 0.1}/=</td>
-                <td style="color:var(--green); font-weight:bold">${stat.total * 0.9}/=</td>
-            </tr>
+            <tr><td>${name}</td><td>${stat.count}</td><td>${stat.total}/=</td><td>${stat.total * 0.1}/=</td><td style="color:var(--green); font-weight:bold">${stat.total * 0.9}/=</td></tr>
         `).join('');
     }
 
-    // WITHDRAWAL LOGIC
     document.getElementById('w-amount').addEventListener('input', (e) => {
         const val = e.target.value;
-        const split = val > 0 ? (val / 2) : 0;
-        document.getElementById('w-split-preview').innerText = `Split: ${split}/= each founder`;
+        document.getElementById('w-split-preview').innerText = `Split: ${val > 0 ? val / 2 : 0}/= each founder`;
     });
 
     function handleWithdrawal() {
         const amount = parseInt(document.getElementById('w-amount').value);
         const secret = document.getElementById('w-secret').value;
-
-        if(!amount || !secret) {
-            return showToast("Please fill all fields", "red");
-        }
-
-        if(amount % 2 !== 0) {
-            return showToast("Amount must be an even number for a clean split", "red");
-        }
-
-        if(secret.length < 4) {
-            return showToast("Invalid Secret Key", "red");
-        }
-
+        if(!amount || !secret) return showToast("Fill all fields", "red");
+        if(amount % 2 !== 0) return showToast("Must be an even number", "red");
         showToast("Withdrawal coming soon... 🚀", "green");
     }
 
-    // VOUCHER LOGIC
     async function generateBatch() {
         const count = document.getElementById('v-count').value;
         const plan = document.getElementById('v-plan').value;
         const price = document.getElementById('v-plan').selectedOptions[0].getAttribute('data-price');
         const agent = document.getElementById('v-agent').value || "Main Hub";
         const secret = document.getElementById('v-secret').value;
-
         try {
-            const res = await axios.post(`${ADMIN_API}/api/vouchers/generate`, {
-                count, plan, amount: price, agentName: agent, secret
-            });
+            const res = await axios.post(`${ADMIN_API}/api/vouchers/generate`, { count, plan, amount: price, agentName: agent, secret });
             if(res.data.success) {
-                showToast(`Successfully generated ${count} vouchers`, "green");
+                showToast(`Generated ${count} vouchers`, "green");
                 document.getElementById('voucher-output').innerHTML = res.data.vouchers.map(v => `
-                    <div class="v-card">
-                        <div style="font-size:0.8rem">SADE NET WIFI</div>
-                        <div style="font-weight:bold; margin:5px 0">${v.plan.toUpperCase()}</div>
-                        <div class="code">${v.code}</div>
-                        <div style="font-size:0.6rem">Login: Connect & Enter Code<br>Support: 0768666068</div>
-                    </div>
+                    <div class="v-card"><div style="font-size:0.8rem">SADE NET WIFI</div><div style="font-weight:bold; margin:5px 0">${v.plan.toUpperCase()}</div><div class="code">${v.code}</div><div style="font-size:0.6rem">Login: Connect & Enter Code<br>Support: 0768666068</div></div>
                 `).join('');
             }
-        } catch(e) { showToast("Generation Failed. Check Secret Key.", "red"); }
+        } catch(e) { showToast("Check Secret Key", "red"); }
     }
 
-    // CHARTS & CUSTOMERS (Existing Logic)
     function initChart(transactions) {
-        if(!transactions || transactions.length === 0) return;
+        if(!transactions.length) return;
         const todayStr = new Date().toLocaleDateString();
         const yestStr = new Date(Date.now() - 864e5).toLocaleDateString();
         const todayT = transactions.filter(t => new Date(t.createdAt).toLocaleDateString() === todayStr).reduce((a,b)=>a+b.amount, 0);
@@ -452,7 +357,7 @@
     }
 
     function renderTopCustomers(transactions) {
-        if(!transactions) return;
+        if(!transactions.length) return;
         const group = transactions.reduce((acc, curr) => {
             const n = curr.mpesaName || "Customer";
             acc[n] = (acc[n] || 0) + curr.amount;
@@ -460,9 +365,7 @@
         }, {});
         const sorted = Object.entries(group).sort((a,b) => b[1] - a[1]).slice(0, 5);
         document.getElementById('top-customers-list').innerHTML = sorted.map(([name, total]) => `
-            <div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid #333">
-                <span>${name}</span> <span style="color:var(--orange)">${total}/=</span>
-            </div>
+            <div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid #333"><span>${name}</span> <span style="color:var(--orange)">${total}/=</span></div>
         `).join('');
     }
 
